@@ -1,0 +1,395 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+.w{padding:1.5rem 0;font-family:var(--font-sans)}
+.step{display:none}.step.active{display:block}
+.progress{display:flex;gap:6px;margin-bottom:1.5rem}
+.pdot{flex:1;height:3px;border-radius:2px;background:var(--color-border-tertiary);transition:background .3s}
+.pdot.done{background:#1D9E75}.pdot.active{background:#378ADD}
+.slabel{font-size:12px;color:var(--color-text-secondary);margin-bottom:4px}
+.stitle{font-size:18px;font-weight:500;color:var(--color-text-primary);margin-bottom:1.25rem}
+.type-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:1.5rem}
+.tcard{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:12px;padding:1rem 0.75rem;cursor:pointer;text-align:center;transition:all .2s}
+.tcard:hover{background:var(--color-background-secondary)}
+.tcard.sel{border:2px solid #378ADD;background:#E6F1FB}
+.tcard i{font-size:26px;color:var(--color-text-secondary);display:block;margin-bottom:6px}
+.tcard.sel i{color:#185FA5}
+.tcard .tl{font-size:13px;font-weight:500;color:var(--color-text-primary)}
+.tcard.sel .tl{color:#0C447C}
+.tcard .ts{font-size:11px;color:var(--color-text-secondary)}
+.btn-next{background:#378ADD;color:#E6F1FB;border:none;padding:11px 24px;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;width:100%;margin-top:.5rem;transition:background .2s}
+.btn-next:hover{background:#185FA5}
+.btn-next:disabled{background:var(--color-border-tertiary);color:var(--color-text-secondary);cursor:not-allowed}
+.toolbar{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;align-items:center}
+.tool-btn{display:flex;align-items:center;gap:4px;padding:6px 10px;border:0.5px solid var(--color-border-secondary);border-radius:8px;background:var(--color-background-primary);font-size:11px;color:var(--color-text-primary);cursor:pointer;transition:all .15s;white-space:nowrap}
+.tool-btn:hover{background:var(--color-background-secondary)}
+.tool-btn.active{border:2px solid #378ADD;background:#E6F1FB;color:#0C447C;font-weight:500}
+.tool-btn i{font-size:14px}
+.tool-btn.danger{color:#A32D2D;border-color:#F09595}
+.sep{width:1px;height:26px;background:var(--color-border-tertiary);margin:0 2px}
+.canvas-wrap{border:0.5px solid var(--color-border-secondary);border-radius:12px;overflow:hidden;background:var(--color-background-secondary);margin-bottom:8px}
+canvas{display:block;width:100%;cursor:crosshair}
+.legend-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.leg{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--color-text-secondary)}
+.ldot{width:11px;height:11px;border-radius:50%}
+.lsq{width:11px;height:11px;border-radius:2px}
+.hint{font-size:12px;color:var(--color-text-secondary);margin-bottom:6px;display:flex;align-items:center;gap:5px}
+.diag-panel{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:10px}
+.diag-card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:8px;padding:10px 12px}
+.diag-lbl{font-size:11px;color:var(--color-text-secondary);margin-bottom:4px}
+.diag-val{font-size:20px;font-weight:500;color:var(--color-text-secondary)}
+.diag-bar{height:4px;border-radius:2px;background:var(--color-border-tertiary);margin-top:6px;overflow:hidden}
+.diag-fill{height:100%;border-radius:2px;transition:width .4s}
+.good{color:#1D9E75}.med{color:#BA7517}.bad{color:#E24B4A}
+.alerts{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+.al{display:flex;align-items:flex-start;gap:7px;padding:8px 12px;border-radius:8px;font-size:12px}
+.al-bad{background:#FCEBEB;border:0.5px solid #A32D2D;color:#791F1F}
+.al-warn{background:#FAEEDA;border:0.5px solid #854F0B;color:#633806}
+.al-tip{background:#EAF3DE;border:0.5px solid #3B6D11;color:#27500A}
+.al i{font-size:13px;flex-shrink:0;margin-top:1px}
+.cta-box{background:#E6F1FB;border-radius:10px;padding:12px 14px;margin-bottom:10px;display:none}
+.cta-box strong{display:block;font-size:14px;font-weight:500;color:#0C447C;margin-bottom:4px}
+.cta-box p{font-size:12px;color:#185FA5;margin-bottom:10px}
+.form-r{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+.form-r input,.form-r select{flex:1;min-width:120px;font-size:13px}
+.btn-cta{background:#1D9E75;color:#E1F5EE;border:none;padding:10px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;width:100%}
+.btn-cta:hover{background:#0F6E56}
+.success{text-align:center;padding:2rem;display:none}
+.success i{font-size:44px;color:#1D9E75;display:block;margin-bottom:12px}
+.success h2{font-size:20px;font-weight:500;color:var(--color-text-primary);margin-bottom:8px}
+.success p{font-size:14px;color:var(--color-text-secondary)}
+</style>
+
+<div class="w">
+<h2 class="sr-only">Simulateur WiFi interactif — testez le signal pièce par pièce</h2>
+
+<div id="app">
+  <div class="progress">
+    <div class="pdot active" id="d1"></div>
+    <div class="pdot" id="d2"></div>
+  </div>
+
+  <div class="step active" id="s1">
+    <div class="slabel">Étape 1 sur 2</div>
+    <div class="stitle">Quel est votre type de logement ?</div>
+    <div class="type-grid">
+      <div class="tcard" onclick="pickType(this,'studio')">
+        <i class="ti ti-door" aria-hidden="true"></i>
+        <div class="tl">Studio</div><div class="ts">1 pièce</div>
+      </div>
+      <div class="tcard" onclick="pickType(this,'appart')">
+        <i class="ti ti-building" aria-hidden="true"></i>
+        <div class="tl">Appartement</div><div class="ts">2–4 pièces</div>
+      </div>
+      <div class="tcard" onclick="pickType(this,'maison1')">
+        <i class="ti ti-home" aria-hidden="true"></i>
+        <div class="tl">Maison</div><div class="ts">1 étage</div>
+      </div>
+      <div class="tcard" onclick="pickType(this,'maison2')">
+        <i class="ti ti-home-2" aria-hidden="true"></i>
+        <div class="tl">Grande maison</div><div class="ts">2 étages +</div>
+      </div>
+      <div class="tcard" onclick="pickType(this,'loft')">
+        <i class="ti ti-layout" aria-hidden="true"></i>
+        <div class="tl">Loft</div><div class="ts">Grand espace</div>
+      </div>
+      <div class="tcard" onclick="pickType(this,'villa')">
+        <i class="ti ti-home-star" aria-hidden="true"></i>
+        <div class="tl">Villa</div><div class="ts">Très grande</div>
+      </div>
+    </div>
+    <button class="btn-next" id="btn1" onclick="goStep2()" disabled>Accéder au simulateur →</button>
+  </div>
+
+  <div class="step" id="s2">
+    <div class="slabel">Étape 2 sur 2 — Simulateur interactif</div>
+    <div class="stitle" id="s2title">Plan de votre logement</div>
+
+    <div class="toolbar">
+      <button class="tool-btn active" id="tb-box" onclick="setTool('box')"><i class="ti ti-router" aria-hidden="true"></i>Box WiFi</button>
+      <div class="sep"></div>
+      <button class="tool-btn" id="tb-wall" onclick="setTool('wall')"><i class="ti ti-wall" aria-hidden="true"></i>Mur béton</button>
+      <button class="tool-btn" id="tb-door" onclick="setTool('door')"><i class="ti ti-door" aria-hidden="true"></i>Porte</button>
+      <button class="tool-btn" id="tb-micro" onclick="setTool('micro')"><i class="ti ti-microwave" aria-hidden="true"></i>Micro-onde</button>
+      <button class="tool-btn" id="tb-tv" onclick="setTool('tv')"><i class="ti ti-device-tv" aria-hidden="true"></i>TV</button>
+      <button class="tool-btn" id="tb-mirror" onclick="setTool('mirror')"><i class="ti ti-layout-sidebar" aria-hidden="true"></i>Miroir</button>
+      <button class="tool-btn" id="tb-floor" onclick="setTool('floor')"><i class="ti ti-stairs" aria-hidden="true"></i>Plancher</button>
+      <button class="tool-btn" id="tb-test" onclick="setTool('test')"><i class="ti ti-wifi" aria-hidden="true"></i>Tester signal</button>
+      <div class="sep"></div>
+      <button class="tool-btn danger" id="tb-del" onclick="setTool('del')"><i class="ti ti-trash" aria-hidden="true"></i>Supprimer</button>
+      <button class="tool-btn danger" onclick="resetMap()"><i class="ti ti-refresh" aria-hidden="true"></i>Effacer</button>
+    </div>
+
+    <div class="hint"><i class="ti ti-hand-click" style="font-size:14px" aria-hidden="true"></i><span id="hint-txt">Placez d'abord votre box WiFi sur le plan</span></div>
+
+    <div class="canvas-wrap"><canvas id="cv" height="320"></canvas></div>
+
+    <div class="legend-row">
+      <div class="leg"><div class="ldot" style="background:#378ADD"></div>Box WiFi</div>
+      <div class="leg"><div class="ldot" style="background:#1D9E75"></div>Signal fort (&gt;70%)</div>
+      <div class="leg"><div class="ldot" style="background:#EF9F27"></div>Signal moyen (40–70%)</div>
+      <div class="leg"><div class="ldot" style="background:#E24B4A"></div>Zone morte (&lt;40%)</div>
+      <div class="leg"><div class="lsq" style="background:#444441"></div>Mur béton</div>
+      <div class="leg"><div class="lsq" style="background:#F0997B"></div>Interférence</div>
+    </div>
+
+    <div class="diag-panel">
+      <div class="diag-card"><div class="diag-lbl">Score moyen</div><div class="diag-val" id="dv-score">--</div><div class="diag-bar"><div class="diag-fill" id="df-score" style="width:0%;background:#1D9E75"></div></div></div>
+      <div class="diag-card"><div class="diag-lbl">Points testés</div><div class="diag-val" id="dv-pts">0</div><div class="diag-bar"><div class="diag-fill" id="df-pts" style="width:0%;background:#378ADD"></div></div></div>
+      <div class="diag-card"><div class="diag-lbl">Obstacles</div><div class="diag-val" id="dv-obs">0</div><div class="diag-bar"><div class="diag-fill" id="df-obs" style="width:0%;background:#BA7517"></div></div></div>
+      <div class="diag-card"><div class="diag-lbl">Pire signal</div><div class="diag-val" id="dv-worst" style="font-size:13px">—</div></div>
+    </div>
+
+    <div class="alerts" id="alerts"></div>
+
+    <div class="cta-box" id="cta-box">
+      <strong>Un conseiller peut tout résoudre gratuitement</strong>
+      <p>Analyse complète + solution adaptée à votre logement en 10 minutes.</p>
+      <div class="form-r">
+        <input type="text" id="fp" placeholder="Prénom">
+        <input type="tel" id="ft" placeholder="06 00 00 00 00">
+      </div>
+      <div class="form-r" style="margin-bottom:0">
+        <select id="fm"><option value="">Meilleur moment pour appeler...</option><option>Ce matin (9h–12h)</option><option>Cet après-midi (14h–18h)</option><option>Ce soir (18h–20h)</option><option>Demain matin</option></select>
+      </div>
+      <button class="btn-cta" onclick="submitLead()" style="margin-top:8px">Être rappelé gratuitement</button>
+    </div>
+  </div>
+</div>
+
+<div class="success" id="success">
+  <i class="ti ti-circle-check" aria-hidden="true"></i>
+  <h2>C'est noté !</h2>
+  <p id="smsg"></p>
+</div>
+
+<script>
+const cv = document.getElementById('cv');
+const ctx = cv.getContext('2d');
+let W=0, H=0, houseType=null, tool='box', boxPos=null, obstacles=[], testPoints=[];
+
+const LAYOUTS = {
+  studio:  [{x:.05,y:.08,w:.90,h:.84,n:'Studio'}],
+  appart:  [{x:.05,y:.06,w:.54,h:.50,n:'Salon'},{x:.62,y:.06,w:.33,h:.50,n:'Chambre'},{x:.05,y:.60,w:.35,h:.34,n:'Cuisine'},{x:.43,y:.60,w:.52,h:.34,n:'SDB / WC'}],
+  maison1: [{x:.05,y:.06,w:.54,h:.42,n:'Salon'},{x:.62,y:.06,w:.33,h:.42,n:'Cuisine'},{x:.05,y:.52,w:.28,h:.42,n:'Chambre 1'},{x:.36,y:.52,w:.28,h:.42,n:'Chambre 2'},{x:.67,y:.52,w:.28,h:.42,n:'Bureau'}],
+  maison2: [{x:.05,y:.06,w:.42,h:.40,n:'Salon'},{x:.50,y:.06,w:.45,h:.40,n:'Cuisine'},{x:.05,y:.50,w:.27,h:.44,n:'Chambre 1'},{x:.35,y:.50,w:.27,h:.44,n:'Chambre 2'},{x:.65,y:.50,w:.30,h:.44,n:'Chambre 3'}],
+  loft:    [{x:.05,y:.06,w:.90,h:.52,n:'Espace principal'},{x:.05,y:.62,w:.43,h:.32,n:'Cuisine'},{x:.52,y:.62,w:.43,h:.32,n:'Chambre / bureau'}],
+  villa:   [{x:.05,y:.05,w:.42,h:.34,n:'Salon'},{x:.51,y:.05,w:.44,h:.34,n:'Cuisine'},{x:.05,y:.43,w:.27,h:.52,n:'Chambre 1'},{x:.35,y:.43,w:.27,h:.52,n:'Chambre 2'},{x:.65,y:.43,w:.30,h:.24,n:'Bureau'},{x:.65,y:.71,w:.30,h:.24,n:'Garage'}],
+};
+const TITLES = {studio:'Studio',appart:'Appartement',maison1:'Maison (1 étage)',maison2:'Grande maison (2 étages)',loft:'Loft',villa:'Villa'};
+const OBS_CFG = {
+  wall:  {penalty:.72,color:'#444441',r:17,icon:'▮'},
+  door:  {penalty:.40,color:'#85B7EB',r:13,icon:'⊟'},
+  micro: {penalty:.55,color:'#F0997B',r:15,icon:'◉'},
+  tv:    {penalty:.35,color:'#AFA9EC',r:15,icon:'▣'},
+  mirror:{penalty:.30,color:'#9FE1CB',r:13,icon:'◈'},
+  floor: {penalty:.65,color:'#D3D1C7',r:19,icon:'⊞'},
+};
+const HINTS = {
+  box:'Cliquez sur le plan pour placer votre box WiFi',
+  wall:'Cliquez pour poser un mur en béton',
+  door:'Cliquez pour poser une porte fermée',
+  micro:'Cliquez pour placer un micro-onde (interférence forte)',
+  tv:'Cliquez pour placer un téléviseur',
+  mirror:'Cliquez pour placer un miroir',
+  floor:'Cliquez pour marquer un plancher béton',
+  test:'Cliquez dans une pièce pour mesurer le signal à cet endroit',
+  del:'Cliquez sur un obstacle ou un point test pour le supprimer',
+};
+
+function pickType(el,type){
+  document.querySelectorAll('.tcard').forEach(c=>c.classList.remove('sel'));
+  el.classList.add('sel'); houseType=type;
+  document.getElementById('btn1').disabled=false;
+}
+
+function goStep2(){
+  document.getElementById('s1').classList.remove('active');
+  document.getElementById('d1').classList.remove('active'); document.getElementById('d1').classList.add('done');
+  document.getElementById('s2').classList.add('active'); document.getElementById('d2').classList.add('active');
+  document.getElementById('s2title').textContent='Plan — '+TITLES[houseType];
+  initCanvas();
+}
+
+function setTool(t){
+  tool=t;
+  document.querySelectorAll('.tool-btn').forEach(b=>b.classList.remove('active'));
+  const el=document.getElementById('tb-'+t);
+  if(el) el.classList.add('active');
+  document.getElementById('hint-txt').textContent=HINTS[t]||'';
+  cv.style.cursor=t==='del'?'pointer':'crosshair';
+}
+
+function resetMap(){ boxPos=null; obstacles=[]; testPoints=[]; updateDiag(); draw(); }
+function getRooms(){ return (LAYOUTS[houseType]||LAYOUTS.appart); }
+
+function initCanvas(){
+  W=cv.offsetWidth; H=Math.round(W*0.50);
+  cv.width=W; cv.height=H; draw();
+}
+
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  drawRooms();
+  drawObstacles();
+  drawTestPoints();
+  if(boxPos) drawBox();
+}
+
+function drawRooms(){
+  getRooms().forEach(r=>{
+    const rx=r.x*W,ry=r.y*H,rw=r.w*W,rh=r.h*H;
+    ctx.fillStyle='rgba(200,200,200,0.10)';
+    ctx.strokeStyle='rgba(136,135,128,0.55)'; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.roundRect(rx,ry,rw,rh,4); ctx.fill(); ctx.stroke();
+    ctx.fillStyle='rgba(100,100,100,0.70)';
+    ctx.font='11px sans-serif'; ctx.textAlign='center';
+    ctx.fillText(r.n, rx+rw/2, ry+rh/2+4);
+  });
+}
+
+function drawObstacles(){
+  obstacles.forEach(o=>{
+    const cfg=OBS_CFG[o.type], cx=o.x*W, cy=o.y*H;
+    ctx.beginPath(); ctx.arc(cx,cy,cfg.r,0,Math.PI*2);
+    ctx.fillStyle=cfg.color+'cc'; ctx.fill();
+    ctx.strokeStyle=cfg.color; ctx.lineWidth=1.5; ctx.stroke();
+    ctx.fillStyle='#fff'; ctx.font=`bold ${cfg.r*0.85}px sans-serif`;
+    ctx.textAlign='center'; ctx.fillText(cfg.icon,cx,cy+cfg.r*0.33);
+  });
+}
+
+function drawTestPoints(){
+  testPoints.forEach(p=>{
+    const cx=p.x*W, cy=p.y*H;
+    const col = p.sig>=70?'#1D9E75':p.sig>=40?'#EF9F27':'#E24B4A';
+    ctx.beginPath(); ctx.arc(cx,cy,22,0,Math.PI*2);
+    ctx.fillStyle=col+'30'; ctx.fill();
+    ctx.strokeStyle=col; ctx.lineWidth=2; ctx.stroke();
+    ctx.fillStyle=col; ctx.font='bold 13px sans-serif'; ctx.textAlign='center';
+    ctx.fillText(Math.round(p.sig)+'%', cx, cy+5);
+  });
+}
+
+function drawBox(){
+  const bx=boxPos.x*W, by=boxPos.y*H;
+  ctx.beginPath(); ctx.arc(bx,by,15,0,Math.PI*2);
+  ctx.fillStyle='#378ADD44'; ctx.fill();
+  ctx.strokeStyle='#185FA5'; ctx.lineWidth=2.5; ctx.stroke();
+  ctx.fillStyle='#185FA5'; ctx.font='bold 8px sans-serif'; ctx.textAlign='center';
+  ctx.fillText('BOX',bx,by+3);
+}
+
+function calcSignalAt(tx,ty){
+  if(!boxPos) return 0;
+  const dx=tx-boxPos.x, dy=ty-boxPos.y;
+  const dist=Math.sqrt(dx*dx+dy*dy)*1.55;
+  let sig=Math.max(0,1-dist);
+  obstacles.forEach(o=>{
+    const cfg=OBS_CFG[o.type];
+    const odx=o.x-boxPos.x, ody=o.y-boxPos.y;
+    const tdx=tx-boxPos.x, tdy=ty-boxPos.y;
+    const oLen=Math.sqrt(odx*odx+ody*ody), tLen=Math.sqrt(tdx*tdx+tdy*tdy);
+    if(oLen<.01||tLen<.01) return;
+    const dot=(odx*tdx+ody*tdy)/(oLen*tLen);
+    if(dot>0.82 && oLen<tLen+0.05){
+      const cross=Math.abs(odx*tdy-ody*tdx)/tLen;
+      if(cross<cfg.r/Math.max(W,H)*2.2) sig*=(1-cfg.penalty);
+    }
+  });
+  return Math.max(0,Math.min(100,sig*100));
+}
+
+function updateDiag(){
+  const obs=obstacles.length;
+  document.getElementById('dv-obs').textContent=obs;
+  document.getElementById('df-obs').style.width=Math.min(100,obs*14)+'%';
+
+  if(!boxPos||testPoints.length===0){
+    document.getElementById('dv-score').textContent='--';
+    document.getElementById('dv-pts').textContent=testPoints.length||'0';
+    document.getElementById('dv-worst').textContent='—';
+    if(testPoints.length===0){
+      document.getElementById('alerts').innerHTML='';
+      document.getElementById('cta-box').style.display='none';
+    }
+    return;
+  }
+
+  const scores=testPoints.map(p=>p.sig);
+  const avg=Math.round(scores.reduce((a,b)=>a+b,0)/scores.length);
+  const worst=Math.round(Math.min(...scores));
+  const worstPt=testPoints.find(p=>Math.round(p.sig)===worst);
+
+  const sv=document.getElementById('dv-score');
+  sv.textContent=avg+'/100'; sv.className='diag-val '+(avg>=70?'good':avg>=40?'med':'bad');
+  document.getElementById('df-score').style.width=avg+'%';
+  document.getElementById('df-score').style.background=avg>=70?'#1D9E75':avg>=40?'#EF9F27':'#E24B4A';
+
+  document.getElementById('dv-pts').textContent=testPoints.length;
+  document.getElementById('df-pts').style.width=Math.min(100,testPoints.length*12)+'%';
+
+  const wv=document.getElementById('dv-worst');
+  wv.textContent=worst+'%'; wv.className='diag-val '+(worst>=70?'good':worst>=40?'med':'bad');
+  wv.style.fontSize='20px';
+
+  const als=[];
+  if(avg>=70) als.push({t:'tip',i:'ti-circle-check',m:'Bonne couverture générale ! Votre logement est bien couvert.'});
+  else if(avg>=40) als.push({t:'warn',i:'ti-alert-circle',m:'Couverture partielle — certains endroits ont un signal faible.'});
+  else als.push({t:'bad',i:'ti-alert-triangle',m:'Couverture critique — de nombreuses zones mortes affectent votre confort.'});
+
+  if(worst<40) als.push({t:'bad',i:'ti-wifi-off',m:`Signal de ${worst}% détecté — cette zone est quasi inutilisable pour streamer ou appeler.`});
+  else if(worst<60) als.push({t:'warn',i:'ti-wifi',m:`Signal minimum de ${worst}% — des coupures peuvent survenir dans cette zone.`});
+
+  const walls=obstacles.filter(o=>o.type==='wall').length;
+  const micros=obstacles.filter(o=>o.type==='micro').length;
+  const floors=obstacles.filter(o=>o.type==='floor').length;
+  if(walls>=2) als.push({t:'bad',i:'ti-wall',m:`${walls} murs béton bloquent fortement le signal. Un kit Mesh ou CPL est recommandé.`});
+  else if(walls===1) als.push({t:'warn',i:'ti-wall',m:'Un mur béton réduit significativement le signal. Un répéteur peut compenser.'});
+  if(micros>0) als.push({t:'warn',i:'ti-microwave',m:'Le micro-onde crée des interférences sur la bande 2.4 GHz. Éloignez la box.'});
+  if(floors>0) als.push({t:'bad',i:'ti-stairs',m:'Un plancher béton atténue fortement le signal entre étages.'});
+  if(testPoints.length>=2 && avg<80) als.push({t:'warn',i:'ti-router',m:'Recentrez la box dans le logement pour réduire les écarts de signal entre pièces.'});
+
+  document.getElementById('alerts').innerHTML=als.map(a=>`<div class="al al-${a.t}"><i class="ti ${a.i}" aria-hidden="true"></i><span>${a.m}</span></div>`).join('');
+  document.getElementById('cta-box').style.display=avg<80?'block':'none';
+}
+
+cv.addEventListener('click',function(e){
+  const r=cv.getBoundingClientRect();
+  const x=(e.clientX-r.left)/r.width, y=(e.clientY-r.top)/r.height;
+
+  if(tool==='del'){
+    let closest=-1, minD=0.06, type=null;
+    obstacles.forEach((o,i)=>{ const d=Math.hypot(o.x-x,o.y-y); if(d<minD){minD=d;closest=i;type='obs';} });
+    testPoints.forEach((p,i)=>{ const d=Math.hypot(p.x-x,p.y-y); if(d<minD){minD=d;closest=i;type='test';} });
+    if(type==='obs'&&closest>=0){ obstacles.splice(closest,1); updateDiag(); draw(); }
+    else if(type==='test'&&closest>=0){ testPoints.splice(closest,1); updateDiag(); draw(); }
+    return;
+  }
+  if(tool==='box'){ boxPos={x,y}; updateDiag(); draw(); setTool('wall'); return; }
+  if(tool==='test'){
+    if(!boxPos){ alert('Placez d\'abord votre box WiFi !'); return; }
+    const sig=calcSignalAt(x,y);
+    testPoints.push({x,y,sig}); updateDiag(); draw();
+    return;
+  }
+  if(OBS_CFG[tool]){ obstacles.push({type:tool,x,y}); updateDiag(); draw(); }
+});
+
+function submitLead(){
+  const p=document.getElementById('fp').value.trim();
+  const t=document.getElementById('ft').value.trim();
+  const m=document.getElementById('fm').value;
+  if(!p||!t||!m){alert('Merci de remplir tous les champs.');return;}
+  document.getElementById('app').style.display='none';
+  const s=document.getElementById('success'); s.style.display='block';
+  document.getElementById('smsg').innerHTML=`Merci <strong>${p}</strong> ! Un conseiller vous appellera <strong>${m.toLowerCase()}</strong> avec la solution adaptée à votre logement.`;
+}
+
+window.addEventListener('load',()=>{ if(document.getElementById('s2').classList.contains('active')) initCanvas(); });
+window.addEventListener('resize',()=>{
+  if(!document.getElementById('s2').classList.contains('active')) return;
+  W=cv.offsetWidth; H=Math.round(W*0.50); cv.width=W; cv.height=H; draw();
+});
+</script>
+</div>
